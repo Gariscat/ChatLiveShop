@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader, RandomSampler, SequentialSampler
 import time
 # Importing the T5 modules from huggingface/transformers
-from transformers import T5Tokenizer, T5ForConditionalGeneration
+from transformers import AutoTokenizer, AutoModel
 from torch import cuda
 import wandb
 from rich.table import Column, Table
@@ -240,11 +240,11 @@ def T5Trainer(
     console.log(f"""[Model]: Loading {model_params["MODEL"]}...\n""")
 
     # tokenzier for encoding the text
-    tokenizer = T5Tokenizer.from_pretrained(model_params["MODEL"])
+    tokenizer = AutoTokenizer.from_pretrained(model_params["MODEL"])
 
     # Defining the model. We are using ChatYuan model and added a Language model layer on top for generation of prediction.
     # Further this model is sent to device (GPU/TPU) for using the hardware.
-    model = T5ForConditionalGeneration.from_pretrained(model_params["MODEL"])
+    model = AutoModel.from_pretrained(model_params["MODEL"])
     model = model.to(device)
 
     # logging

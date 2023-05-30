@@ -2,7 +2,7 @@ from utils import *
 
 if __name__ == '__main__':
     model_params = {
-        "MODEL": "ClueAI/ChatYuan-large-v1",  # model_type
+        "MODEL": "ClueAI/ChatYuan-large-v2",  # model_type
         "TRAIN_BATCH_SIZE": 8,  # training batch size, 8
         "VALID_BATCH_SIZE": 8,  # validation batch size,8 
         "TRAIN_EPOCHS": 1,  # number of training epochs
