@@ -63,21 +63,19 @@ def convert_json_to_csv(source_file, target_file):
         json_string = json.loads(line.strip())
         input_ = json_string["input"].replace("\n", "_")
         output_ = json_string["target"]
-        answer_choices_ = json_string.get("answer_choices",[])
-        type_ = json_string["type"]
+        """answer_choices_ = json_string.get("answer_choices",[])
+        type_ = json_string["type"]"""
  
         input_list.append(input_)
         output_list.append(output_)
-        answer_choices_list.append(answer_choices_)
-        type_list.append(type_)
+        """answer_choices_list.append(answer_choices_)
+        type_list.append(type_)"""
 
         if i < 5:
             print(input_, output_)
 
     df = pd.DataFrame({'input': input_list,
                        'target':output_list,
-                       'answer_choices': answer_choices_list,
-                       'type': type_list,
                        })
     
     df.to_csv(target_file, index=False)
