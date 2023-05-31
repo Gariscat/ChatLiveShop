@@ -1,9 +1,9 @@
 from utils import *
-
+import wandb
 
 
 def trainer(
-    dataframe, source_text, target_text, model_params, train_size=0.95, output_dir="./outputs/"
+    dataframe, source_text, target_text, model_params, train_size=0.95, output_dir="./outputs/", online_logger=None
 ):
     """
     T5 trainer
@@ -18,6 +18,7 @@ def trainer(
     console.log(f"""[Model]: Loading {model_params["MODEL"]}...\n""")
 
     # tokenzier for encoding the text
+    print('Using:', model_params["MODEL"])
     tokenizer = AutoTokenizer.from_pretrained(model_params["MODEL"])
 
     # Defining the model. We are using ChatYuan model and added a Language model layer on top for generation of prediction.
@@ -89,7 +90,7 @@ def trainer(
 
     for epoch in range(model_params["TRAIN_EPOCHS"]):
         # 1) train for one epoch
-        train(epoch, tokenizer, model, device, training_loader, optimizer)
+        train(epoch, tokenizer, model, device, training_loader, optimizer, online_logger=online_logger)
         
         # 2) save model for each epoch
         console.log(f"[Saving Model]...\n")
@@ -149,5 +150,5 @@ if __name__ == '__main__':
         target_text="target",
         model_params=model_params,
         output_dir="outputs",
-        logger=wandb,
+        online_logger=wandb,
     )

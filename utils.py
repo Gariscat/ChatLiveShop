@@ -14,7 +14,7 @@ import time
 # Importing the T5 modules from huggingface/transformers
 from transformers import AutoTokenizer, AutoModel
 from torch import cuda
-import wandb
+
 from rich.table import Column, Table
 from rich import box
 from rich.console import Console
@@ -71,8 +71,8 @@ def convert_json_to_csv(source_file, target_file):
         """answer_choices_list.append(answer_choices_)
         type_list.append(type_)"""
 
-        if i < 5:
-            print(input_, output_)
+        """if i < 5:
+            print(input_, output_)"""
 
     df = pd.DataFrame({'input': input_list,
                        'target':output_list,
@@ -149,7 +149,7 @@ class YourDataSetClass(Dataset):
         }
 
 
-def train(epoch, tokenizer, model, device, loader, optimizer, online_logger=wandb):
+def train(epoch, tokenizer, model, device, loader, optimizer, online_logger=None):
     """
     Function to be called for training with the parameters passed from main function
     """
