@@ -1,9 +1,10 @@
 from utils import *
+from transformers import T5Tokenizer, T5ForConditionalGeneration
 import wandb
 
 
 def trainer(
-    dataframe, source_text, target_text, model_params, train_size=0.95, output_dir="./outputs/", online_logger=None
+    dataframe, source_text, target_text, model_params, train_size=0.95, output_dir="./outputs/", online_logger=None,
 ):
     """
     T5 trainer
@@ -18,12 +19,11 @@ def trainer(
     console.log(f"""[Model]: Loading {model_params["MODEL"]}...\n""")
 
     # tokenzier for encoding the text
-    print('Using:', model_params["MODEL"])
-    tokenizer = AutoTokenizer.from_pretrained(model_params["MODEL"])
+    tokenizer = T5Tokenizer.from_pretrained(model_params["MODEL"])
 
     # Defining the model. We are using ChatYuan model and added a Language model layer on top for generation of prediction.
     # Further this model is sent to device (GPU/TPU) for using the hardware.
-    model = AutoModel.from_pretrained(model_params["MODEL"])
+    model = T5ForConditionalGeneration.from_pretrained(model_params["MODEL"], trust_remote_code=True)
     model = model.to(device)
 
     # logging
@@ -137,10 +137,10 @@ if __name__ == '__main__':
         config=model_params
     )
 
-    source_file='/root/data/train.json'
-    target_file='/root/data/train.csv'
+    source_file='./data/train.json'
+    target_file='./data/train.csv'
     convert_json_to_csv(source_file, target_file)
-    df = pd.read_csv('/root/data/train.csv')
+    df = pd.read_csv('./data/train.csv')
     print("df.head:", df.head(n=5))
     print("df.shape:", df.shape)
     
