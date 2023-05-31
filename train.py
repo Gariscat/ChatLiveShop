@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
     source_file='./data/train.json'
     target_file='./data/train.csv'
-    convert_json_to_csv(source_file, target_file)
+    convert_json_to_csv(source_file, target_file, num_items=10000)
     df = pd.read_csv('./data/train.csv')
     print("df.head:", df.head(n=5))
     print("df.shape:", df.shape)

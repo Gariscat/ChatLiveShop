@@ -51,8 +51,12 @@ training_logger = Table(
 
 device = 'cuda' if cuda.is_available() else 'cpu'
 
-def convert_json_to_csv(source_file, target_file):
-    lines = open(source_file, 'r').readlines()
+def convert_json_to_csv(source_file, target_file, num_items=None):
+    if num_items is None:
+        lines = open(source_file, 'r').readlines()
+    else:
+        lines = open(source_file, 'r').readlines()[:num_items]
+    ### lines = open(source_file, 'r').readlines()
     print("length of lines:", len(lines))
     input_list = []
     output_list = []
