@@ -1,0 +1,53 @@
+wandb_version: 1
+
+MODEL:
+  desc: null
+  value: ClueAI/ChatYuan-large-v2
+TRAIN_BATCH_SIZE:
+  desc: null
+  value: 8
+VALID_BATCH_SIZE:
+  desc: null
+  value: 8
+TRAIN_EPOCHS:
+  desc: null
+  value: 1
+VAL_EPOCHS:
+  desc: null
+  value: 1
+LEARNING_RATE:
+  desc: null
+  value: 0.0001
+MAX_SOURCE_TEXT_LENGTH:
+  desc: null
+  value: 512
+MAX_TARGET_TEXT_LENGTH:
+  desc: null
+  value: 64
+SEED:
+  desc: null
+  value: 42
+_wandb:
+  desc: null
+  value:
+    python_version: 3.8.10
+    cli_version: 0.15.3
+    framework: huggingface
+    huggingface_version: 4.29.0
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1685516750.086957
+    t:
+      1:
+      - 1
+      - 11
+      - 49
+      - 55
+      3:
+      - 16
+      - 23
+      4: 3.8.10
+      5: 0.15.3
+      6: 4.29.0
+      8:
+      - 5
