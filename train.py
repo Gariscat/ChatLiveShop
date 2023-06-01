@@ -1,10 +1,55 @@
 from utils import *
 from transformers import T5Tokenizer, T5ForConditionalGeneration
 import wandb
+import deepspeed
+import argparse
+
+def train_epoch(epoch, tokenizer, device, loader, optimizer, model_engine, online_logger=None):
+    """
+    Function to be called for training with the parameters passed from main function
+    """
+    time1 = time.time()
+    for _, data in enumerate(loader, 0):
+        y = data["target_ids"].to(device).long()
+        y_ids = y[:, :-1].contiguous() # target, from start to end(except end of token, <EOS>). e.g. "你好吗？"
+        lm_labels = y[:, 1:].clone().detach() # target, from second to end.e.g."好吗？<EOS>"
+        lm_labels[y[:, 1:] == tokenizer.pad_token_id] = -100 # releted to pad_token and loss. for detail, check here: https://github.com/Shivanandroy/T5-Finetuning-PyTorch/issues/3
+        ids = data["source_ids"].to(device).long() # input. e.g. "how are you?"
+        mask = data["source_mask"].to(device).long()
+
+        outputs = model_engine(
+            input_ids=ids,
+            attention_mask=mask,
+            decoder_input_ids=y_ids,
+            labels=lm_labels,
+        )
+        loss = outputs[0]
+
+        if online_logger:
+            online_logger.log({'step': _, 'loss': loss.item()})
+
+        if _ % 100 == 0:
+            time2 = time.time()
+            print(_,"epoch:"+str(epoch)+"-loss:"+str(loss.item())+";each step's time spent:"+str(float(time2-time1)/float(_+0.0001)))
+            # training_logger.add_row(str(epoch), str(_), str(loss))
+            # console.print(training_logger)
+
+        ### optimizer.zero_grad()
+        ### loss.backward()
+        ### optimizer.step()
+        model_engine.backward(loss)
+        model_engine.step()
 
 
-def trainer(
-    dataframe, source_text, target_text, model_params, train_size=0.95, output_dir="./outputs/", online_logger=None,
+def train_main(
+    dataframe,
+    source_label,
+    target_label,
+    model_params,
+    train_size=0.95,
+    output_dir="./outputs/",
+    cmd_args=None,
+    online_logger=None,
 ):
     """
     T5 trainer
@@ -24,13 +69,19 @@ def trainer(
     # Defining the model. We are using ChatYuan model and added a Language model layer on top for generation of prediction.
     # Further this model is sent to device (GPU/TPU) for using the hardware.
     model = T5ForConditionalGeneration.from_pretrained(model_params["MODEL"], trust_remote_code=True)
-    model = model.to(device)
+    ### model = model.to(device)
+    model_engine, optimizer, _, _ = deepspeed.initialize(
+        args=cmd_args,
+        model=model,
+        model_parameters=model.parameters(),
+        dist_init_required=True,
+    )
 
     # logging
     console.log(f"[Data]: Reading data...\n")
 
     # Importing the raw dataset
-    dataframe = dataframe[[source_text, target_text]]
+    dataframe = dataframe[[source_label, target_label]]
     # display_df(dataframe.head(2))
 
     # Creation of Dataset and Dataloader
@@ -51,16 +102,16 @@ def trainer(
         tokenizer,
         model_params["MAX_SOURCE_TEXT_LENGTH"],
         model_params["MAX_TARGET_TEXT_LENGTH"],
-        source_text,
-        target_text,
+        source_label,
+        target_label,
     )
     val_set = YourDataSetClass(
         val_dataset,
         tokenizer,
         model_params["MAX_SOURCE_TEXT_LENGTH"],
         model_params["MAX_TARGET_TEXT_LENGTH"],
-        source_text,
-        target_text,
+        source_label,
+        target_label,
     )
 
     # Defining the parameters for creation of dataloaders
@@ -90,7 +141,7 @@ def trainer(
 
     for epoch in range(model_params["TRAIN_EPOCHS"]):
         # 1) train for one epoch
-        train(epoch, tokenizer, model, device, training_loader, optimizer, online_logger=online_logger)
+        train_epoch(epoch, tokenizer, device, training_loader, optimizer, model_engine, online_logger=online_logger)
         
         # 2) save model for each epoch
         console.log(f"[Saving Model]...\n")
@@ -119,6 +170,14 @@ def trainer(
 
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='My training script.')
+    parser.add_argument('--local_rank', type=int, default=-1,
+                        help='local rank passed from distributed launcher')
+    # Include DeepSpeed configuration arguments
+    parser = deepspeed.add_config_arguments(parser)
+    cmd_args = parser.parse_args()
+
     model_params = {
         "MODEL": "/root/ChatYuan-large-v2",  # model_type
         "TRAIN_BATCH_SIZE": 8,  # training batch size, 8
@@ -140,15 +199,16 @@ if __name__ == '__main__':
     source_file='./data/train.json'
     target_file='./data/train.csv'
     convert_json_to_csv(source_file, target_file, num_items=10000)
-    df = pd.read_csv('./data/train.csv')
+    df = pd.read_csv('./data/train.csv', engine='python')
     print("df.head:", df.head(n=5))
     print("df.shape:", df.shape)
     
-    trainer(
+    train_main(
         dataframe=df,
-        source_text="input",
-        target_text="target",
+        source_label="input",
+        target_label="target",
         model_params=model_params,
         output_dir="outputs",
+        cmd_args=cmd_args,
         online_logger=wandb,
     )
