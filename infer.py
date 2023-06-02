@@ -1,7 +1,19 @@
 from utils import *
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import argparse
+
+parser = argparse.ArgumentParser(description='My training script.')
+parser.add_argument('--finetuned', type=bool, default=True)
+args = parser.parse_args()
+
 tokenizer = AutoTokenizer.from_pretrained("/root/ChatYuan-large-v2")
-model_tuned = AutoModelForSeq2SeqLM.from_pretrained("./outputs/model_files/")
+model_path = "./outputs/model_files/" if args.finetuned else "/root/ChatYuan-large-v2"
+model_tuned = AutoModelForSeq2SeqLM.from_pretrained(model_path)
+
+"""
+for name, para in model_tuned.named_parameters():
+    print(name, para.shape)
+"""
 
 """
 def weights_init_normal(m):

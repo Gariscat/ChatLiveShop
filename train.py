@@ -3,6 +3,7 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration
 import wandb
 import deepspeed
 import argparse
+from copy import deepcopy
 
 def train_epoch(epoch, tokenizer, device, loader, optimizer, model_engine, online_logger=None):
     """
@@ -69,6 +70,8 @@ def train_main(
     # Defining the model. We are using ChatYuan model and added a Language model layer on top for generation of prediction.
     # Further this model is sent to device (GPU/TPU) for using the hardware.
     model = T5ForConditionalGeneration.from_pretrained(model_params["MODEL"])
+    total_params = sum(p.numel() for p in model.parameters())
+    print("Total number of parameters:", total_params)
     ### model = model.to(device)
     model_engine, optimizer, _, _ = deepspeed.initialize(
         args=cmd_args,
@@ -153,8 +156,8 @@ def train_main(
         console.log(f"[Initiating Validation]...\n")
         with torch.no_grad(): # add 2022.10.4
             #for epoch in range(model_params["VAL_EPOCHS"]):
-            predictions, actuals = validate(epoch, tokenizer, model, device, val_loader,model_params["MAX_TARGET_TEXT_LENGTH"])
-            final_df = pd.DataFrame({"Generated Text": predictions, "Actual Text": actuals})
+            inputs, predictions, actuals = validate(epoch, tokenizer, model, device, val_loader, model_params["MAX_TARGET_TEXT_LENGTH"])
+            final_df = pd.DataFrame({"Input Text": inputs, "Generated Text": predictions, "Actual Text": actuals})
             final_df.to_csv(os.path.join(output_dir, "predictions.csv"))
 
     console.save_text(os.path.join(output_dir, "logs.txt"))
@@ -183,18 +186,20 @@ if __name__ == '__main__':
         "MODEL": "/root/ChatYuan-large-v2",  # model_type
         "TRAIN_BATCH_SIZE": 8,  # training batch size, 8
         "VALID_BATCH_SIZE": 8,  # validation batch size,8 
-        "TRAIN_EPOCHS": 1,  # number of training epochs
+        "TRAIN_EPOCHS": 20,  # number of training epochs
         "VAL_EPOCHS": 1,  # number of validation epochs
         "LEARNING_RATE": 1e-4,  # learning rate
         "MAX_SOURCE_TEXT_LENGTH": 512,  # max length of source text, 512
-        "MAX_TARGET_TEXT_LENGTH": 64,  # max length of target text,64
+        "MAX_TARGET_TEXT_LENGTH": 128,  # max length of target text, 128
         "SEED": 42,  # set seed for reproducibility
     }
 
+    config = deepcopy(model_params)
+    config.update(vars(cmd_args))
     wandb.init(
         project='ChatLiveShop',
         entity='gariscat',
-        config=model_params
+        config=config
     )
 
     prefix = cmd_args.fp[:cmd_args.fp.index('.')]

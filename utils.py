@@ -165,6 +165,7 @@ def validate(epoch, tokenizer, model, device, loader, max_length,
     Function to evaluate model for predictions
     """
     model.eval()
+    inputs = []
     predictions = []
     actuals = []
     with torch.no_grad():
@@ -183,14 +184,21 @@ def validate(epoch, tokenizer, model, device, loader, max_length,
                 early_stopping=config['early_stopping']
             )
             
+            input = [tokenizer.decode(t, skip_special_tokens=True, clean_up_tokenization_spaces=True) for t in ids]
             preds = [tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in generated_ids]
-            target = [tokenizer.decode(t, skip_special_tokens=True, clean_up_tokenization_spaces=True)for t in y]
+            target = [tokenizer.decode(t, skip_special_tokens=True, clean_up_tokenization_spaces=True) for t in y]
             if _ % 1000 == 0:
                 console.print(f'Completed {_}')
 
+            inputs.extend(input)
             predictions.extend(preds)
             actuals.extend(target)
-    return predictions, actuals
+
+    print(inputs)
+    print(predictions)
+    print(actuals)
+    
+    return inputs, predictions, actuals
 
 
 """

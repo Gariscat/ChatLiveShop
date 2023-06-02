@@ -1,1 +1,2 @@
 deepspeed train.py --deepspeed_config ds_config.json
+deepspeed train.py --deepspeed_config ds_config.json --fp sample.txt
