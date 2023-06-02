@@ -68,7 +68,7 @@ def train_main(
 
     # Defining the model. We are using ChatYuan model and added a Language model layer on top for generation of prediction.
     # Further this model is sent to device (GPU/TPU) for using the hardware.
-    model = T5ForConditionalGeneration.from_pretrained(model_params["MODEL"], trust_remote_code=True)
+    model = T5ForConditionalGeneration.from_pretrained(model_params["MODEL"])
     ### model = model.to(device)
     model_engine, optimizer, _, _ = deepspeed.initialize(
         args=cmd_args,
@@ -174,6 +174,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='My training script.')
     parser.add_argument('--local_rank', type=int, default=-1,
                         help='local rank passed from distributed launcher')
+    parser.add_argument('--fp', type=str, default="train.json",)
     # Include DeepSpeed configuration arguments
     parser = deepspeed.add_config_arguments(parser)
     cmd_args = parser.parse_args()
@@ -196,10 +197,11 @@ if __name__ == '__main__':
         config=model_params
     )
 
-    source_file='./data/train.json'
-    target_file='./data/train.csv'
+    prefix = cmd_args.fp[:cmd_args.fp.index('.')]
+    source_file=f'./data/{cmd_args.fp}'
+    target_file=f'./data/{prefix}'+'.csv'
     convert_json_to_csv(source_file, target_file, num_items=10000)
-    df = pd.read_csv('./data/train.csv', engine='python')
+    df = pd.read_csv('./data/sample.csv', engine='python')
     print("df.head:", df.head(n=5))
     print("df.shape:", df.shape)
     
